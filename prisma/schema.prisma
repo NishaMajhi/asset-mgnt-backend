@@ -1,0 +1,122 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    Int                     @id @default(autoincrement())
+  username              String
+  email                 String                  @unique
+  password              String
+  name                  String
+  gender                Gender
+  phone_number          String
+  address               String
+  role                  Role
+  created_at            DateTime                @default(now())
+  updated_at            DateTime                @updatedAt
+  Asset_Request         Asset_Request[]
+  Asset_Service_Request Asset_Service_Request[]
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model Category {
+  id         Int      @id @default(autoincrement())
+  slug       String
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  assets     Asset[]
+}
+
+model Asset {
+  id                        Int                     @id @default(autoincrement())
+  category_id               Int
+  name                      String
+  model                     String
+  manufacturing_date        DateTime
+  expiry_date               DateTime
+  price                     Float
+  image                     String
+  description               Json
+  quantity                  Int
+  asset_availability_status AssetAvailabilityStatus
+  created_at                DateTime                @default(now())
+  updated_at                DateTime                @updatedAt
+  category                  Category                @relation(fields: [category_id], references: [id])
+  asset_requests            Asset_Request[]
+  asset_service_requests    Asset_Service_Request[]
+}
+
+enum AssetAvailabilityStatus {
+  YES
+  NO
+}
+
+model Asset_Request {
+  id                   Int                @id @default(autoincrement())
+  user_id              Int
+  asset_id             Int
+  asset_description    Json
+  asset_request_type   AssetRequestType
+  asset_request_status AssetRequestStatus
+  created_at           DateTime           @default(now())
+  updated_at           DateTime           @updatedAt
+  user                 User               @relation(fields: [user_id], references: [id])
+  asset                Asset              @relation(fields: [asset_id], references: [id])
+}
+
+enum AssetRequestType {
+  BORROW
+  RETURN
+}
+
+enum AssetRequestStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model Asset_Service_Request {
+  id                   Int                @id @default(autoincrement())
+  user_id              Int
+  asset_id             Int
+  issue_type           IssueType
+  issue_resolve_status IssueResolveStatus
+  description          Json
+  created_at           DateTime           @default(now())
+  updated_at           DateTime           @updatedAt
+  user                 User               @relation(fields: [user_id], references: [id])
+  asset                Asset              @relation(fields: [asset_id], references: [id])
+}
+
+enum IssueType {
+  MALFUNCTION
+  REPAIR
+}
+
+enum IssueResolveStatus {
+  SOLVED
+  UNSOLVED
+  REJECTED
+}
