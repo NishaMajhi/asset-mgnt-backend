@@ -2,19 +2,20 @@ const asyncHandler = require("express-async-handler")
 const { PrismaClient } = require("@prisma/client")
 const prisma = new PrismaClient()
 const bcrypt = require("bcrypt")
-const { userRegisterInputValidation, generateUserName } = require("../../helper/userHelper")
+const { userRegisterInputValidation, generateUserName, userLoginInputValidation, generateToken, userProfileUpdateInputValidation, userPasswordUpdateInputValidation } = require("../../helper/userHelper")
 
 
 const userRegister = asyncHandler(async (req, res) => {
     try {
 
-        const { email, password, name, gender, phoneNumber, address } = req.body
-
+        // Validate user input
         const inputValidate = await userRegisterInputValidation(req.body)
         if (!inputValidate.status) {
             res.status(400)
             throw new Error(inputValidate.message)
         }
+
+        const { email, password, name, gender, phoneNumber, address } = req.body
 
         const checkUserExists = await prisma.user.findUnique({
             where: {
@@ -29,10 +30,10 @@ const userRegister = asyncHandler(async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt)
 
-        const userName = await generateUserName(name)
+        const username = await generateUserName(name)
 
         let user = {
-            username: userName,
+            username: username,
             email: email,
             password: hashedPassword,
             name: name,
@@ -53,31 +54,175 @@ const userRegister = asyncHandler(async (req, res) => {
         res.status(201).json({ message: "User Registered Successfully" })
 
     } catch (error) {
-        throw new Error(error.message)
+        throw new Error(error.message);
     }
 })
 
 const userLogin = asyncHandler(async (req, res) => {
     try {
 
+        // Validate user input
+        const inputValidate = await userLoginInputValidation(req.body)
+        if (!inputValidate.status) {
+            res.status(400)
+            throw new Error(inputValidate.message)
+        }
+
+        const { email, username, password } = req.body
+
+        const checkUserExists = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email: email },
+                    { username: username }
+                ]
+            }
+        })
+        if (!checkUserExists) {
+            res.status(400)
+            throw new Error("User not found")
+        }
+
+        if (checkUserExists && !await bcrypt.compare(password, checkUserExists.password)) {
+            res.status(400)
+            throw new Error("Wrong Credentials")
+        }
+
+        const token = await generateToken(checkUserExists.id)
+
+        if (token.status) {
+            res.status(200).json({ message: "Login successfully", role: checkUserExists.role, token: token.token })
+        } else {
+            res.status(400)
+            throw new Error(token.message)
+        }
+
     } catch (error) {
-        throw new Error(error.message)
+        throw new Error(error.message);
     }
 })
 
 const viewUserProfile = asyncHandler(async (req, res) => {
     try {
 
+        const { id } = req.payload
+
+        const user = await prisma.user.findUnique({
+            where: {
+                id: id
+            },
+            select: {
+                username: true,
+                email: true,
+                name: true,
+                gender: true,
+                phone_number: true,
+                address: true,
+                role: true
+            }
+        })
+        if (!user) {
+            res.status(400)
+            throw new Error("User not found")
+        }
+
+        res.status(200).json(user)
+
     } catch (error) {
-        throw new Error(error.message)
+        throw new Error(error.message);
     }
 })
 
 const updateUserProfile = asyncHandler(async (req, res) => {
     try {
+        const { id } = req.payload;
+
+        // Validate user input
+        const inputValidate = await userProfileUpdateInputValidation(req.body);
+        if (!inputValidate.status) {
+            res.status(400);
+            throw new Error(inputValidate.message);
+        }
+
+        const { username, name, gender, phoneNumber, address } = req.body;
+
+        let updatedData = {};
+
+        if (username && username !== "") {
+            updatedData.username = username;
+        }
+        if (name && name !== "") {
+            updatedData.name = name;
+        }
+        if (gender && gender !== "") {
+            updatedData.gender = gender;
+        }
+        if (phoneNumber) {
+            updatedData.phoneNumber = phoneNumber;
+        }
+        if (address && address !== "") {
+            updatedData.address = address;
+        }
+
+        // Update user profile in the database
+        const updatedUserProfile = await prisma.user.update({
+            where: { id },
+            data: updatedData,
+        });
+
+        res.status(200).json({
+            message: "User profile updated successfully",
+            data: updatedUserProfile,
+        });
 
     } catch (error) {
-        throw new Error(error.message)
+        res.status(error.status || 500)
+        throw new Error(error.message || "Internal Server Error",);
+    }
+});
+
+
+const updateUserPassword = asyncHandler(async (req, res) => {
+    try {
+        const { id } = req.payload
+
+        const inputValidate = await userPasswordUpdateInputValidation(req.body)
+        if (!inputValidate.status) {
+            res.status(400);
+            throw new Error(inputValidate.message);
+        }
+
+        const { password, newPassword } = req.body
+
+        const checkUserExists = await prisma.user.findFirst({
+            where: {
+                id: id
+            }
+        })
+        if (checkUserExists && await bcrypt.compare(password, checkUserExists.password)) {
+
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash(newPassword, salt)
+
+            const updatedUserProfile = await prisma.user.update({
+                where: { id },
+                data: {
+                    password: hashedPassword
+                },
+            });
+
+            res.status(200).json({
+                message: "password updated successfully",
+            });
+
+        }
+        else {
+            res.status(400);
+            throw new Error("wrong password entered");
+        }
+
+    } catch (error) {
+        throw new Error(error.message);
     }
 })
 
@@ -86,5 +231,6 @@ module.exports = {
     userRegister,
     userLogin,
     viewUserProfile,
-    updateUserProfile
+    updateUserProfile,
+    updateUserPassword
 }

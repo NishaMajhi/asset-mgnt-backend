@@ -1,11 +1,20 @@
 const express = require("express")
-const { adminRegister, adminLogin, viewAdminProfile, updateAdminProfile } = require("../controllers/admin/adminController")
+const { adminLogin, viewAdminProfile, updateAdminProfile } = require("../controllers/admin/adminController")
+const { validate } = require("../middlewares/authMiddleware")
+const { categoryRouter } = require("./categoryRoute")
+const { assetRouter } = require("./assetRoute")
 const adminRouter = express.Router()
 
-adminRouter.post("/register", adminRegister)
 adminRouter.post("/login", adminLogin)
-adminRouter.get("/profile", viewAdminProfile)
-adminRouter.put("/profile", updateAdminProfile)
+adminRouter.get("/profile", validate, viewAdminProfile)
+adminRouter.put("/profile", validate, updateAdminProfile)
+
+
+//category routes
+adminRouter.use("/category", categoryRouter)
+
+//asset routes
+adminRouter.use("/asset", assetRouter)
 
 module.exports = {
     adminRouter
