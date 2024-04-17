@@ -2,8 +2,8 @@ const asyncHandler = require("express-async-handler")
 const { PrismaClient } = require("@prisma/client")
 const prisma = new PrismaClient()
 const bcrypt = require("bcrypt")
-const { adminLoginInputValidation } = require("../../helper/adminHelper")
-const { generateToken } = require("../../helper/userHelper")
+const { generateToken } = require("../../utils/userUtility")
+const { adminLoginInputValidation } = require("../../utils/adminUtility")
 
 const adminLogin = asyncHandler(async (req, res) => {
     try {

@@ -2,7 +2,7 @@ const asyncHandler = require("express-async-handler")
 const { PrismaClient } = require("@prisma/client")
 const prisma = new PrismaClient()
 const bcrypt = require("bcrypt")
-const { userRegisterInputValidation, generateUserName, userLoginInputValidation, generateToken, userProfileUpdateInputValidation, userPasswordUpdateInputValidation } = require("../../helper/userHelper")
+const { userRegisterInputValidation, generateUserName, userLoginInputValidation, userProfileUpdateInputValidation, userPasswordUpdateInputValidation, generateToken } = require("../../utils/userUtility")
 
 
 const userRegister = asyncHandler(async (req, res) => {
@@ -98,6 +98,7 @@ const userLogin = asyncHandler(async (req, res) => {
         }
 
     } catch (error) {
+        console.log(error.message)
         throw new Error(error.message);
     }
 })
@@ -158,7 +159,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
             updatedData.gender = gender;
         }
         if (phoneNumber) {
-            updatedData.phoneNumber = phoneNumber;
+            updatedData.phone_number = phoneNumber;
         }
         if (address && address !== "") {
             updatedData.address = address;

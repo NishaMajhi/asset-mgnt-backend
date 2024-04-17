@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler")
 const { PrismaClient } = require("@prisma/client");
-const { generateSlug } = require("../../helper/categoryHelper");
+const { generateSlug } = require("../../utils/categoryUtility");
 const prisma = new PrismaClient()
 
 
