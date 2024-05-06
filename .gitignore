@@ -119,3 +119,5 @@ dist
 
 # packages
 package-lock.json
+
+/src/test

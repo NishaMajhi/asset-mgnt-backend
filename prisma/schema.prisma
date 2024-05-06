@@ -102,8 +102,8 @@ model Asset_Service_Request {
   user_id              Int
   asset_id             Int
   issue_type           IssueType
-  issue_resolve_status IssueResolveStatus
-  description          Json
+  issue_resolve_status IssueResolveStatus @default(UNSOLVED)
+  description          Json?
   created_at           DateTime           @default(now())
   updated_at           DateTime           @updatedAt
   user                 User               @relation(fields: [user_id], references: [id])

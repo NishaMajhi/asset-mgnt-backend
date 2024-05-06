@@ -3,6 +3,7 @@ const { PrismaClient } = require("@prisma/client")
 const prisma = new PrismaClient()
 const bcrypt = require("bcrypt")
 const { userRegisterInputValidation, generateUserName, userLoginInputValidation, userProfileUpdateInputValidation, userPasswordUpdateInputValidation, generateToken } = require("../../utils/userUtility")
+const logger = require("../../middlewares/logger")
 
 
 const userRegister = asyncHandler(async (req, res) => {
@@ -54,6 +55,7 @@ const userRegister = asyncHandler(async (req, res) => {
         res.status(201).json({ message: "User Registered Successfully" })
 
     } catch (error) {
+        logger.error(error.message)
         throw new Error(error.message);
     }
 })
@@ -98,7 +100,7 @@ const userLogin = asyncHandler(async (req, res) => {
         }
 
     } catch (error) {
-        console.log(error.message)
+        logger.error(error.message)
         throw new Error(error.message);
     }
 })
@@ -130,6 +132,7 @@ const viewUserProfile = asyncHandler(async (req, res) => {
         res.status(200).json(user)
 
     } catch (error) {
+        logger.error(error.message)
         throw new Error(error.message);
     }
 })
@@ -177,8 +180,8 @@ const updateUserProfile = asyncHandler(async (req, res) => {
         });
 
     } catch (error) {
-        res.status(error.status || 500)
-        throw new Error(error.message || "Internal Server Error",);
+        logger.error(error.message)
+        throw new Error(error.message);
     }
 });
 
@@ -223,6 +226,7 @@ const updateUserPassword = asyncHandler(async (req, res) => {
         }
 
     } catch (error) {
+        logger.error(error.message)
         throw new Error(error.message);
     }
 })
